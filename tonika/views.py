@@ -12,7 +12,6 @@ from tonika.models import Song, Author, Folder, User
 
 from django.contrib.auth import authenticate
 from django.http import HttpResponse
-from rest_framework.permissions import IsAuthenticated
 
 from django.conf import settings
 import redis

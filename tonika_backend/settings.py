@@ -13,10 +13,8 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 from pathlib import Path
 from decouple import config
 
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -28,8 +26,7 @@ SECRET_KEY = config("DJANGO_KEY")
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
-
+AUTH_USER_MODEL = 'tonika.User'
 # Application definition
 
 INSTALLED_APPS = [
@@ -73,7 +70,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'tonika_backend.wsgi.application'
-
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
@@ -85,12 +83,11 @@ DATABASES = {
         'USER': 'pvrts',
         'PASSWORD': config("SQL_PASSWORD"),
         'HOST': 'localhost',
-        'PORT': 3306, # Стандартный порт MySQL
+        'PORT': 3306,  # Стандартный порт MySQL
         'OPTIONS': {'charset': 'utf8'},
         'TEST_CHARSET': 'utf8',
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
@@ -110,7 +107,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
 
@@ -122,7 +118,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
@@ -131,7 +126,8 @@ MEDIA_URL = '/images/'
 
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
-    BASE_DIR / 'frontend/build/static' #Unnecessary if you just need Backend Setup for Image Upload. It's just to Load React Project Static Files
+    BASE_DIR / 'frontend/build/static'
+    # Unnecessary if you just need Backend Setup for Image Upload. It's just to Load React Project Static Files
 ]
 
 MEDIA_ROOT = BASE_DIR / 'static/images'
