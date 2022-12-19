@@ -1,4 +1,11 @@
+from django.contrib.auth.base_user import BaseUserManager
 from django.db import models
+from django.contrib.auth import models as user_models
+from django.contrib.auth.models import PermissionsMixin
+from django.utils import timezone
+
+
+# from django.contrib.auth.hashers import make_password, check_password
 
 
 class Author(models.Model):
@@ -25,10 +32,37 @@ class Song(models.Model):
         db_table = 'songs'
 
 
-class User(models.Model):
-    login = models.CharField(max_length=50)
-    password = models.CharField(max_length=50)
+class UserManager(BaseUserManager):
+    def _create_user(self, username, password, is_superuser, is_staff, **extra_fields):
+        now = timezone.now()
+        user = self.model(
+            username=username,
+            is_superuser=is_superuser,
+            is_staff=is_staff,
+            last_login=now,
+            **extra_fields
+        )
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_user(self, username, password, **extra_fields):
+        return self._create_user(username, password, False, False, **extra_fields)
+
+    def create_superuser(self, username, password, **extra_fields):
+        user = self._create_user(username, password, True, True, **extra_fields)
+        user.save(using=self._db)
+        return user
+
+
+class User(user_models.AbstractBaseUser, PermissionsMixin):
+    username = models.CharField(max_length=150, unique=True)
     favourites = models.ManyToManyField(Song)
+    is_staff = models.BooleanField(default=False)
+
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = []
+    objects = UserManager()
 
     class Meta:
         managed = True

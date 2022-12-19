@@ -9,7 +9,7 @@ class AuthorSerializer(serializers.ModelSerializer):
 
 
 class SongSerializer(serializers.ModelSerializer):
-    author = serializers.SlugRelatedField(queryset=Author.objects.all(), slug_field='name',)
+    author = serializers.SlugRelatedField(queryset=Author.objects.all(), slug_field='name', )
 
     class Meta:
         model = Song
@@ -28,4 +28,4 @@ class FolderSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["pk", "login"]
+        fields = ["pk", "username", "is_staff", "is_superuser"]
