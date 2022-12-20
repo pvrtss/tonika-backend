@@ -16,9 +16,10 @@ urlpatterns = [
     path('api/', include(router.urls)),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('api/admin/', admin.site.urls),
+    path('api/new-songs/', views.NewSongsList.as_view(), name='new'),
     path('api/upload/', views.upload_image, name="image-upload"),
     path('api/auth/', views.AuthView.as_view(), name="auth"),
     path('api/user/create', views.create_user, name="create-user"),
-    path('api/logout', views.logout, name="logout"),
+    path('api/logout/', views.logout, name="logout"),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

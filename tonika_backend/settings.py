@@ -122,11 +122,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
 STATIC_URL = '/static/'
-MEDIA_URL = '/images/'
+MEDIA_URL = '/api/images/'
 
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
-    BASE_DIR / 'frontend/build/static'
     # Unnecessary if you just need Backend Setup for Image Upload. It's just to Load React Project Static Files
 ]
 

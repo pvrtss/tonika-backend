@@ -27,9 +27,9 @@ def create_user(request):
     password = data['password']
     u = User.objects.create_user(username=username, password=password)
     if u is not None:
-        return HttpResponse("{'status': 'ok'}")
+        return HttpResponse('{"status": "ok"}')
     else:
-        return HttpResponse("{'status': 'error', 'error': 'user creation failed'}")
+        return HttpResponse('{"status": "error", "error": "user creation failed"}')
 
 
 @api_view(["GET"])
@@ -37,7 +37,7 @@ def logout(request):
     ssid = request.COOKIES.get("session_id")
     if ssid is not None:
         session_storage.delete(ssid)
-        return Response(status=status.HTTP_200_OK, data="{\"status\": \"successfully logged out\"}")
+        return Response(status=status.HTTP_200_OK, data='{"status": "successfully logged out"}')
     else:
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -54,11 +54,11 @@ class AuthView(APIView):
             u = User.objects.get(username=username)
             u.last_login = timezone.now()
             u.save()
-            response = Response("{\"status\": \"ok\"}", content_type="json")
+            response = Response('{"status": "ok"}', content_type="json")
             response.set_cookie("session_id", key)
             return response
         else:
-            return Response("{\"status\": \"error\", \"error\": \"login failed\"}")
+            return Response('{"status": "error", "error": "login failed"}', content_type="json")
 
 
 class NewSongsList(APIView):
