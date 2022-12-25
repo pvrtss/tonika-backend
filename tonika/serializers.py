@@ -13,7 +13,7 @@ class SongSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Song
-        fields = ["pk", "name", "chords", "author", "cover", "date_added"]
+        fields = ["pk", "name", "chords", "author", "cover", "status", "date_added", "date_accepted", "date_declined"]
 
 
 class FolderSerializer(serializers.ModelSerializer):

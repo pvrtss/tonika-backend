@@ -31,7 +31,7 @@ class Song(models.Model):
     cover = models.ImageField(null=True, blank=True)
 
     date_added = models.DateTimeField(auto_now=False, auto_now_add=True, null=True)
-    date_approved = models.DateTimeField(null=True)
+    date_accepted = models.DateTimeField(null=True)
     date_declined = models.DateTimeField(null=True)
 
     class Meta:
