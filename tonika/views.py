@@ -54,21 +54,31 @@ class AuthView(APIView):
             u = User.objects.get(username=username)
             u.last_login = timezone.now()
             u.save()
-            response = Response('{"status": "ok"}', content_type="json")
+            us = UserSerializer(u)
+            response = Response(us.data)
             response.set_cookie("session_id", key)
             return response
         else:
-            return Response('{"status": "error", "error": "login failed"}', content_type="json")
+            return Response(status=status.HTTP_204_NO_CONTENT, data="{}")
+
+
+@api_view(['GET'])
+def ensure_auth(request):
+    ssid = request.COOKIES.get("session_id")
+    if ssid is not None:
+        uname = session_storage.get(ssid)
+        if uname is not None:
+            uname = uname.decode()
+            user = User.objects.get(username=uname)
+            response = UserSerializer(user)
+            return Response(response.data)
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class NewSongsList(APIView):
     def get(self, request):
-        ssid = request.COOKIES.get("session_id")
-        if ssid is not None and session_storage.get(ssid) is not None:
-            response = SongSerializer(Song.objects.all().order_by('-date_added')[:10], many=True)
-            return Response(response.data)
-        else:
-            return Response(status=status.HTTP_403_FORBIDDEN)
+        response = SongSerializer(Song.objects.all().order_by('-date_added')[:10], many=True)
+        return Response(response.data)
 
 
 class SongViewSet(viewsets.ModelViewSet):
@@ -82,8 +92,9 @@ class SongViewSet(viewsets.ModelViewSet):
         return Song.objects.filter(date_added__year__gte=from_year,
                                    date_added__year__lte=to_year,
                                    name__icontains=name,
-                                   author__name__icontains=author).order_by('name')
-
+                                   author__name__icontains=author,
+                                   status='AC').order_by('name')
+        
     serializer_class = SongSerializer
 
 
@@ -93,12 +104,99 @@ class AuthorViewSet(viewsets.ModelViewSet):
     serializer_class = AuthorSerializer
 
 
-@api_view(['POST'])
+@api_view(["GET"])
+@permission_classes([DefaultUser])
+def favourites(request):
+    user = User.objects.get(username=session_storage.get(request.COOKIES.get('session_id')).decode())
+    response = SongSerializer(user.favourites.all(), many=True)
+    return Response(response.data)
+
+
+@api_view(["POST"])
+@permission_classes([DefaultUser])
+def add_to_favourites(request):
+    data = json.loads(request.body)
+    song_pk = data['song_pk']
+    user = User.objects.get(username=session_storage.get(request.COOKIES.get('session_id')).decode())
+    user.favourites.add(Song.objects.get(pk=song_pk))
+    response = SongSerializer(user.favourites.all(), many=True)
+    return Response(response.data)
+
+
+@api_view(["DELETE"])
+@permission_classes([DefaultUser])
+def delete_from_favourites(request):
+    data = json.loads(request.body)
+    song_pk = data['song_pk']
+    user = User.objects.get(username=session_storage.get(request.COOKIES.get('session_id')).decode())
+    s = user.favourites.get(pk=song_pk)
+    user.favourites.remove(s)
+    response = SongSerializer(user.favourites.all(), many=True)
+    return Response(response.data)
+
+
+@api_view(["POST"])
 @permission_classes([DefaultUser])
 def create_folder(request):
+    data = json.loads(request.body)
+    name = data['name']
+    desc = data['description']
     user = User.objects.get(username=session_storage.get(request.COOKIES.get('session_id')).decode())
-    f = Folder.objects.create()
-    return Response(status=status.HTTP_400_BAD_REQUEST)
+    f = Folder.objects.create(name=name, description=desc, owner=user)
+    response = FolderSerializer(f)
+    return Response(response.data)
+
+
+@api_view(["DELETE"])
+@permission_classes([DefaultUser])
+def delete_folder(request):
+    data = json.loads(request.body)
+    fpk = data['folder_pk']
+    user = User.objects.get(username=session_storage.get(request.COOKIES.get('session_id')).decode())
+    assert user.pk == Folder.objects.get(pk=fpk).owner.pk, 'FIX: user-folder cross access'
+    f = Folder.objects.remove(pk=fpk)
+    response = FolderSerializer(f)
+    return Response(response.data)
+
+
+@api_view(["GET"])
+@permission_classes([DefaultUser])
+def folders(request):
+    user = User.objects.get(username=session_storage.get(request.COOKIES.get('session_id')).decode())
+    response = FolderSerializer(Folder.objects.filter(owner=user))
+    return Response(response.data)
+
+
+@api_view(["POST"])
+@permission_classes([DefaultUser])
+def add_to_folder(request):
+    data = json.loads(request.body)
+    fpk = data['folder_pk']
+    spk = data['song_pk']
+    user = User.objects.get(username=session_storage.get(request.COOKIES.get('session_id')).decode())
+    assert user.pk == Folder.objects.get(pk=fpk).owner.pk, 'FIX: user-folder cross access'
+    s = Song.objects.get(pk=spk)
+    f = Folder.objects.get(pk=fpk)
+    f.songs.add(s)
+    f.refresh_from_db()
+    response = FolderSerializer(f)
+    return Response(response.data)
+
+
+@api_view(["POST"])
+@permission_classes([DefaultUser])
+def remove_from_folder(request):
+    data = json.loads(request.body)
+    fpk = data['folder_pk']
+    spk = data['song_pk']
+    user = User.objects.get(username=session_storage.get(request.COOKIES.get('session_id')).decode())
+    assert user.pk == Folder.objects.get(pk=fpk).owner.pk, 'FIX: user-folder cross access'
+    s = Song.objects.get(pk=spk)
+    f = Folder.objects.get(pk=fpk)
+    f.songs.remove(s)
+    f.refresh_from_db()
+    response = FolderSerializer(f)
+    return Response(response.data)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -110,11 +208,8 @@ class UserViewSet(viewsets.ModelViewSet):
 @api_view(['POST'])
 def upload_image(request):
     data = request.data
-
     obj_id = data['pk']
     obj = Song.objects.get(id=obj_id)
-
     obj.image = request.FILES.get('image')
     obj.save()
-
     return Response('Image was uploaded')

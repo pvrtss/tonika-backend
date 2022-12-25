@@ -3,9 +3,7 @@ from django.db import models
 from django.contrib.auth import models as user_models
 from django.contrib.auth.models import PermissionsMixin
 from django.utils import timezone
-
-
-# from django.contrib.auth.hashers import make_password, check_password
+from django.utils.translation import gettext_lazy as gl
 
 
 class Author(models.Model):
@@ -21,11 +19,20 @@ class Author(models.Model):
 
 
 class Song(models.Model):
+    class Status(models.TextChoices):
+        PENDING = 'PE', gl('Pending')
+        ACCEPTED = 'AC', gl('Accepted')
+        DECLINED = 'DE', gl('Declined')
+
     name = models.CharField(max_length=100)
     author = models.ForeignKey(Author, on_delete=models.CASCADE)
     chords = models.CharField(max_length=10000)
+    status = models.CharField(max_length=2, choices=Status.choices, default=Status.PENDING)
     cover = models.ImageField(null=True, blank=True)
+
     date_added = models.DateTimeField(auto_now=False, auto_now_add=True, null=True)
+    date_approved = models.DateTimeField(null=True)
+    date_declined = models.DateTimeField(null=True)
 
     class Meta:
         managed = True

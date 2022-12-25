@@ -19,7 +19,11 @@ urlpatterns = [
     path('api/new-songs/', views.NewSongsList.as_view(), name='new'),
     path('api/upload/', views.upload_image, name="image-upload"),
     path('api/auth/', views.AuthView.as_view(), name="auth"),
+    path('api/eauth/', views.ensure_auth, name="e-auth"),
     path('api/user/create', views.create_user, name="create-user"),
     path('api/logout/', views.logout, name="logout"),
+    path('api/favourites/', views.favourites, name="favourites"),
+    path('api/favourites/add/', views.add_to_favourites, name="add favourites"),
+    path('api/favourites/delete/', views.delete_from_favourites, name="delete favourites"),
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -17,15 +17,17 @@ class SongSerializer(serializers.ModelSerializer):
 
 
 class FolderSerializer(serializers.ModelSerializer):
-    songs_id = serializers.PrimaryKeyRelatedField(many=True, read_only=True, source="songs")
+    songs = SongSerializer(read_only=True, many=True)
     owner_id = serializers.PrimaryKeyRelatedField(many=False, read_only=True, source="owner")
 
     class Meta:
         model = Folder
-        fields = ["pk", "name", "description", "songs_id", "owner_id"]
+        fields = ["pk", "name", "description", "songs", "owner_id"]
 
 
 class UserSerializer(serializers.ModelSerializer):
+    favourites = SongSerializer(read_only=True, many=True)
+
     class Meta:
         model = User
-        fields = ["pk", "username", "is_staff", "is_superuser"]
+        fields = ["pk", "username", "is_staff", "is_superuser", "favourites"]
