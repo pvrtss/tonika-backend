@@ -6,7 +6,7 @@ from rest_framework.views import APIView
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
-from tonika.permissions import ManagerOrReadOnly, ManagerOnly, DefaultUser
+from tonika.permissions import ManagerOrReadOnly, ManagerAndUserCreateOrReadOnly, ManagerOnly, DefaultUser
 from tonika.serializers import SongSerializer, AuthorSerializer, FolderSerializer, UserSerializer
 from tonika.models import Song, Author, Folder, User
 
@@ -77,7 +77,7 @@ def ensure_auth(request):
 
 class NewSongsList(APIView):
     def get(self, request):
-        response = SongSerializer(Song.objects.all().order_by('-date_added')[:10], many=True)
+        response = SongSerializer(Song.objects.all().filter(status='AC').order_by('-date_accepted')[:10], many=True)
         return Response(response.data)
 
 
@@ -94,12 +94,12 @@ class SongViewSet(viewsets.ModelViewSet):
                                    name__icontains=name,
                                    author__name__icontains=author,
                                    status='AC').order_by('name')
-        
+
     serializer_class = SongSerializer
 
 
 class AuthorViewSet(viewsets.ModelViewSet):
-    permission_classes = [ManagerOrReadOnly]
+    permission_classes = [ManagerAndUserCreateOrReadOnly]
     queryset = Author.objects.all().order_by('name')
     serializer_class = AuthorSerializer
 
@@ -196,6 +196,39 @@ def remove_from_folder(request):
     f.songs.remove(s)
     f.refresh_from_db()
     response = FolderSerializer(f)
+    return Response(response.data)
+
+
+@api_view(["GET"])
+@permission_classes([ManagerOnly])
+def get_all_songs(request):
+    response = SongSerializer(Song.objects.all(), many=True)
+    return Response(response.data)
+
+
+@api_view(["POST"])
+@permission_classes([ManagerOnly])
+def accept_song(request):
+    data = json.loads(request.body)
+    spk = data['song_pk']
+    s = Song.objects.get(pk=spk)
+    s.date_accepted = timezone.now()
+    s.state = Song.Status.ACCEPTED
+    s.save()
+    response = SongSerializer(Song.objects.all(), many=True)
+    return Response(response.data)
+
+
+@api_view(["POST"])
+@permission_classes([ManagerOnly])
+def decline_song(request):
+    data = json.loads(request.body)
+    spk = data['song_pk']
+    s = Song.objects.get(pk=spk)
+    s.date_declined = timezone.now()
+    s.state = Song.Status.DECLINED
+    s.save()
+    response = SongSerializer(Song.objects.all(), many=True)
     return Response(response.data)
 
 
