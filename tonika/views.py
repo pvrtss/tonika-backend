@@ -12,7 +12,6 @@ from tonika.models import Song, Author, Folder, User
 
 from django.contrib.auth import authenticate
 from django.http import HttpResponse
-
 from django.conf import settings
 import redis
 import uuid
@@ -92,8 +91,7 @@ class SongViewSet(viewsets.ModelViewSet):
         return Song.objects.filter(date_added__year__gte=from_year,
                                    date_added__year__lte=to_year,
                                    name__icontains=name,
-                                   author__name__icontains=author,
-                                   status='AC').order_by('name')
+                                   author__name__icontains=author).order_by('name')
 
     serializer_class = SongSerializer
 
@@ -202,7 +200,15 @@ def remove_from_folder(request):
 @api_view(["GET"])
 @permission_classes([ManagerOnly])
 def get_all_songs(request):
-    response = SongSerializer(Song.objects.all(), many=True)
+    fromd = request.GET.get('from', '1970-01-01')
+    fromd = '1970-01-01' if fromd == '' else fromd
+    to = request.GET.get('to', timezone.datetime.now())
+    to = timezone.now().strftime('%Y-%m-%d') if to == '' else to
+    status = request.GET.get('status', '')
+    print(fromd, to,status, sep=',')
+    response = SongSerializer(Song.objects.filter(date_added__gte=fromd,date_added__lte=to, status__icontains=status).order_by('-status'),
+                              many=True)
+    print(response.data)
     return Response(response.data)
 
 
@@ -212,8 +218,8 @@ def accept_song(request):
     data = json.loads(request.body)
     spk = data['song_pk']
     s = Song.objects.get(pk=spk)
-    s.date_accepted = timezone.now()
-    s.state = Song.Status.ACCEPTED
+    s.date_accepted = timezone.now().strftime('%Y-%m-%d')
+    s.status = 'AC'
     s.save()
     response = SongSerializer(Song.objects.all(), many=True)
     return Response(response.data)
@@ -225,8 +231,8 @@ def decline_song(request):
     data = json.loads(request.body)
     spk = data['song_pk']
     s = Song.objects.get(pk=spk)
-    s.date_declined = timezone.now()
-    s.state = Song.Status.DECLINED
+    s.date_declined = timezone.now().strftime('%Y-%m-%d')
+    s.status = Song.Status.DECLINED
     s.save()
     response = SongSerializer(Song.objects.all(), many=True)
     return Response(response.data)

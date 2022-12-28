@@ -30,9 +30,9 @@ class Song(models.Model):
     status = models.CharField(max_length=2, choices=Status.choices, default=Status.PENDING)
     cover = models.ImageField(null=True, blank=True)
 
-    date_added = models.DateTimeField(auto_now=False, auto_now_add=True, null=True)
-    date_accepted = models.DateTimeField(null=True)
-    date_declined = models.DateTimeField(null=True)
+    date_added = models.DateField(auto_now_add=True, null=True)
+    date_accepted = models.DateField(null=True)
+    date_declined = models.DateField(null=True)
 
     class Meta:
         managed = True
